@@ -1,58 +1,56 @@
 local filesystem = {}
 
---[[local metatable = {
-  __index = filesystem
-}
-
-function test.new(text)
-	return setmetatable({tx = text}, metatable)
-end
-
-function test:draw()
-	print (self.tx)
-end
-
-function filesystem.open(path, mode)
-  checkArg(1, path, "string")
-  local device = computer.getBootAddress()
-  mode = mode or "r"
-  if component.list("filesystem")[device] == "filesystem" then
-    local fis = component.proxy(device)
-    return setmetatable ({handle = fis.open(path, mode), fs = fis}, metatable)
-  end
-end
-
-function filesystem.ropen(device, path, mode)
-  mode = mode or "r"
-  if component.list("filesystem")[device] == "filesystem" then
-    local fis = component.proxy(device)
-    return setmetatable ({handle = fis.open(path, mode), fs = fis}, metatable)
-  end
-end
-
-function filesystem:read(size)
-  fs = self.fs
-  return fs.read(self.handle, size)
-end
-
-function filesystem:write(text)
-  fs = self.fs
-  return fs.write(self.handle, text)
-end
-
-function filesystem:close()
-  fs = self.fs
-  fs.close(self.handle)
-end]]
+local uni = lib.get("unicode")
+local component = lib.get("component")
 
 function filesystem.open(path, mode)
   checkArg(1, path, "string")
   mode = mode or "r"
   local fs = component.proxy(computer.getBootAddress())
   local f = fs.open(path, mode)
-  return {write = function(text) fs.write(f, text) end,
-          read = function(len) return fs.read(f, (len or math.huge)) end,
-          close = function() fs.close(f) end}
+  local file = {}
+  file.buffer = ""
+  file.cursor = 1
+  file.bufSize = 512
+  file.file = f
+  function file.write(text)
+    return fs.write(file.file, text)
+  end 
+  function file.read(size)
+    if size then
+      return fs.read(file.file, size)
+    end
+    local data = ""
+    local new = ""
+    repeat
+      data = data .. new
+      new = fs.read(file.file, file.bufSize)
+    until not new
+    return data
+  end
+  function file.readLine()
+    local en = false
+    repeat
+      local data = fs.read(file.file, file.bufSize)
+      if not data then file.buffer = file.buffer .. "\n"; en = true; break end
+      file.buffer = file.buffer .. data
+    until file.buffer:find("[\n \r]",file.cursor)
+    local line = file.buffer:sub(file.cursor,file.buffer:find("[\n \r]",file.cursor)-1)
+    file.cursor = file.buffer:find("[\n \r]",file.cursor)+1
+    if file.cursor == uni.len(file.buffer) and en and line == "" then return nil end
+    return line
+  end
+  function file.lines()
+    return function()
+      local line = file.readLine()
+      if line then return line end
+      return nil
+    end
+  end
+  function file.close()
+    fs.close(file.file)
+  end
+  return file
 end
 
 function filesystem.exists(path)

@@ -1,6 +1,10 @@
 local io = {}
 
 local adv = lib.get("adv")
+local unicode = lib.get("unicode")
+local component = lib.get("component")
+local sys = lib.get("system")
+--local tty = lib.get("tty")
 
 local gpu = component.proxy(component.list("gpu")())
 local line = 1
@@ -32,9 +36,25 @@ function io.print(...)
     newLine()
   end
 end
+
+function io.write(text, file)
+  if type(file) == "table" and file.write then
+    file.write(text)
+  elseif sys.current.tty then
+    sys.current.tty.stdout.write(text)
+  end
+end
   
+function io.read(file)
+  if type(file) == "table" and file.read then
+    return file.read()
+  elseif sys.current.tty then
+    return sys.current.tty.stdin.read()
+  end
+end
+
 local history = {}
-function io.read(text, hist)
+function io.rawread(text, hist)
   hist = hist or history
   local histPos = 0
   local buffer = ''
@@ -73,6 +93,12 @@ function io.read(text, hist)
         if pos < #buffer then
           pos = pos + 1
         end
+      -- Home
+      elseif r[4] == 199 then
+        pos = 0
+      -- End
+      elseif r[4] == 207 then
+        pos = #buffer
       -- Up
       elseif r[4] == 200 then
         if  histPos < #hist then

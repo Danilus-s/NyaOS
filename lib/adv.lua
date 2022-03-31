@@ -26,8 +26,11 @@ function adv.duplicate(tab)
   local sec = {}
   local i,v = next(tab, nil)
   while i do
-	sec[i] = v
-	i,v = next(tab, i)
+    if type(v) == "table" and i ~= "_G" then
+      v = adv.duplicate(v)
+    end
+  	sec[i] = v
+  	i,v = next(tab, i)
   end
   return sec
 end

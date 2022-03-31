@@ -68,7 +68,8 @@ end
   computer.pullSignal(5)
   --dofiles("test " .. i .. " " .. math.random(1,100), le/50*i)
 end]]
-local ev = {lib.get("event").pull(1, {key_down=true})}
+local ev = {lib.get("event").rawpull(1, {key_down=true})}
+if ev[4] == 41 then computer.beep(1300,0.05) end
 
 gpu.setBackground(0x000000)
 gpu.setForeground(0xFFFFFF)
@@ -84,11 +85,14 @@ gpu.fill(1,1,w,h," ")
 
 if ev and ev[4] == 41 then
   local io = lib.get("io")
+  for a,b in pairs(lib.getLoaded()) do
+    _G[a] = b
+  end
 
   io.print('Nya OS\nTerminal\n \n ')
 
   while true do
-    local text = io.read('lua> ')
+    local text = io.rawread('lua> ')
     local res, reas
     if text:sub(1,1) == '=' then
       text = text:sub(2)
@@ -105,6 +109,6 @@ else
       error(res[2])
     end
   end
-  os.log("boot_init",tostring(#lib.get("system").processes))
+  --os.log("boot_init",tostring(#lib.get("system").processes))
   loadfile('/boot/kernel.lua')()
 end

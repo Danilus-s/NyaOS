@@ -9,18 +9,20 @@ local lastEv = {}
 
 --os.log("kernel", sys.conf["updateRate"])
 
-local oldontop = {}
-local oldname = ""
+--local oldontop = {}
+--local oldname = ""
+
+gui.init()
 
 local function run(id, i, ev, type)
   sys.processes[id].status = "run"
   sys.processes[id].arg = {}
   sys.current = sys.processes[id]
-  if sys.ontop == sys.current and (sys.ontop ~= oldontop or sys.current.conf.name ~= oldname) then
+  --[[if sys.ontop == sys.current and (sys.ontop ~= oldontop or sys.current.conf.name ~= oldname) then
     gui.updateMainScreen()
     oldname = sys.current.conf.name
     oldontop = sys.ontop
-  end
+  end]]
   local res = {}
   if type == "event" then
     res = {coroutine.resume(i.coro, table.unpack(ev))}
@@ -37,6 +39,9 @@ local function run(id, i, ev, type)
   elseif res[2] == "wait" then
     sys.processes[id].status = "wait"
     sys.processes[id].arg = {res[3]}
+  elseif res[2] == "loop" then
+    sys.processes[id].status = "loop"
+    sys.processes[id].arg = {}
   elseif res[2] == "event" then
     sys.processes[id].status = "event"
     if res[3] == -1 then
@@ -55,7 +60,7 @@ while true do
   for id,i in pairs(sys.processes) do
     if ev[1] ~= nil then lastEv = adv.duplicate(ev) end
     
-    if coroutine.status(i.coro) == "dead" then sys.ontop = i.parent; sys.processes[id] = nil; goto skip end
+    if coroutine.status(i.coro) == "dead" then gui.close(id); goto skip end
     
     --os.log("kernel", i.path .. " " .. i.status .. " " .. (tostring((i.arg[1] or computer.uptime()-computer.uptime()) or "") .. " " .. (tostring(i.arg[2]) or ""))
     --os.log("kernel", ev[1])
@@ -73,4 +78,5 @@ while true do
     end
     ::skip::
   end
+  if ev[1] ~= nil then gui.checkPress(ev) end
 end

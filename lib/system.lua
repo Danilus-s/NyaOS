@@ -3,6 +3,7 @@ local system = {}
 local fs = lib.get("filesystem")
 local adv = lib.get("adv")
 local users = lib.get("users")
+local gui = lib.get("gui")
 
 system.processes = {}
 system.current = {}
@@ -24,14 +25,14 @@ function system.setParam(key, value)
   system.current.conf[key] = value
 end
 
-function system.start(path, G)
-  if not G then
-    G = adv.duplicate(_G)
-    G.os.sleep = function(timeout) coroutine.yield("sleep", timeout) end
-    G.event = {}
-    G.event.pull = function(timeout, event) return coroutine.yield("event", timeout, event) end
-    G.waitForDead = function(pid) coroutine.yield("wait", pid) end
-  end
+function system.start(path, G, args)
+  args = args or {}
+  G = G or adv.duplicate(_G)
+  G.os.sleep = function(timeout) coroutine.yield("sleep", timeout) end
+  G.os.getenv = function(name) return system.current.env[name] end
+  G.os.setenv = function(name, value) system.current.env[name] = value; return system.current.env[name] end
+  G.os.close = function() gui.close(gui.ontop.pid) end
+  G.waitForDead = function(pid) coroutine.yield("wait", pid) end
 
   if not fs.exists(path) then return nil, path .. " not exists." end
   local f = fs.open(path)
@@ -40,10 +41,18 @@ function system.start(path, G)
   if not func then return nil, res end
   local coro, res = coroutine.create(func)
   if not coro then return nil, res end
-  system.processes[#system.processes+1] = {path = path, status = "run", arg={}, coro = coro, conf={name="App"}, user=(system.current.user or "root"), parent=system.current}
-  system.ontop = system.processes[#system.processes]
+  local pid = #system.processes+1
+  system.processes[pid] = {pid = pid,path = path, status = "run", arg={}, coro = coro, conf={},env={}, gui=false,G=G, user=(system.current.user or "system"), parent=system.current, child={}}
+  system.processes[pid].env = adv.duplicate(system.current.env or {})
+  if system.current.tty then system.processes[pid].tty = system.current.tty end
+  if system.current.child then system.current.child[#system.current.child+1] = system.processes[pid] end
+  if not system.current.user or system.current.user == "system" or system.current.user == "root" then
+    for i,b in pairs(args) do
+      system.processes[pid][i] = b
+    end
+  end
   f.close()
-  return true, #system.processes
+  return pid
 end
 
 return system

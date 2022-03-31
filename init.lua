@@ -72,6 +72,28 @@ local function print(...)
   end
 end
 
+local xcomputer = computer
+local fs = component.proxy(addr)
+
+local function cycle(tab)
+  local text = ""
+  for i,b in pairs(tab) do
+    --if i == _G then goto skip
+    if type(b) == "table" then cycle(b)
+    elseif type(b) == "function" then text = text .. tostring(i) .. "=function\n"
+    else text = text .. tostring(i) .. "=" .. tostring(b) .. "\n" end
+    ::skip::
+    xcomputer.pullSignal(0)
+  end
+  return text
+end
+
+local function dump()
+  local file = fs.open("/var/dump_".. os.date("%d-%m-%Y_%H.%M") ..".dmp", "w")
+  fs.write(file, cycle(_ENV))
+  fs.close(file)
+end
+
 local result, reason = xpcall(loadfile('/boot/init.lua'), function(msg)
   return tostring(msg).."\n"..debug.traceback()
 end)
@@ -83,13 +105,14 @@ if not result then
   print('/// Critical error has occurred! ///\n ')
   reason = reason or "unknown error"
   print(tostring(reason))
-  computer.beep(1500,0.1)
+  xcomputer.beep(1500,0.1)
   if os.sleep ~= nil then os.sleep(0.1) end
-  computer.beep(1500,0.1)
+  xcomputer.beep(1500,0.1)
+  --dump()
   while true do
-    e = computer.pullSignal(1)
+    e = xcomputer.pullSignal(1)
     if e == 'key_down' then 
-      computer.shutdown()
+      xcomputer.shutdown(true)
     end
   end
 end

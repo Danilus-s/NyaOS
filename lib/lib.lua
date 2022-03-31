@@ -10,7 +10,9 @@ local loaded = {
   ["lib"] = lib,
   ["string"] = string,
   ["table"] = table,
-  ["unicode"] = unicode
+  ["unicode"] = unicode,
+  ["computer"] = computer,
+  ["component"] = component
 }
 
 local syspath = {
@@ -18,7 +20,10 @@ local syspath = {
   "/lib/users.lua"
 }
 
+local all_loadede = false
+
 local function loadlib(path, module)
+  --if module == "gui" then return nil, path .. ": block" end
   if component.invoke(computer.getBootAddress(), "exists", path) then
     local f = loadfile(path)
     local res, reas = pcall(f, module)
@@ -34,14 +39,12 @@ end
 
 function lib.get(module)
   checkArg(1, module, "string")
-  --os.log("lib-load", "name: "..module)
+  os.log("lib-load-call", "name: "..module)
   --os.log("lib-load", "load: "..tostring(loaded[module]))
   if loaded[module] then
     return loaded[module]
   else
     local res, reas = loadlib("/lib/" .. module .. ".lua", module)
-    --os.log("lib-load", "res: "..(tostring(res) or "-"))
-    --os.log("lib-load", "reas: "..(reas or "-"))
     if not res then
       return nil, reas
     else
@@ -49,6 +52,10 @@ function lib.get(module)
       return loaded[module]
     end
   end
+end
+
+function lib.getLoaded()
+  return loaded
 end
 
 function lib.load(module, path)
@@ -62,6 +69,7 @@ function lib.load(module, path)
 end
 
 function liblib.init(func)
+  os.log("lib-load", "--- start loading ---")
   local fs = component.proxy(computer.getBootAddress())
   local libList = fs.list("/lib")
   local name
@@ -69,22 +77,34 @@ function liblib.init(func)
   local file = fs.open("/var/boot.log", "w")
   for _,i in pairs(libList) do
     count = count + 1
-    if type(i) == "string" and loaded[i:sub(1,#i-4)] == nil and i:sub(#i-3) == ".lua" then
+    if type(i) == "string" and i:sub(#i-3) == ".lua" then
       name = i:sub(1,#i-4)
       local text = name .. " > "
       local res, reas = loadlib("/lib/" .. i, name)
       if not res then
         text = text .. "error"
         fs.write(file, name .. ": " .. reas.. "\n" .. debug.traceback() .. "\n")
+        os.log("lib-load", name .. ": not loaded.")
       else
-				loaded[name] = res
+        if not loaded[name] then
+			   loaded[name] = res
+         os.log("lib-load", name .. ": loaded as new.")
+        else
+          for a,b in pairs(res) do
+            loaded[name][a] = b
+          end
+          os.log("lib-load", name .. ": loaded with overwrite.")
+        end
         text = text .. "loaded"
       end
       func(text, 44/#libList*count)
     end
   end
   fs.close(file)
-  name = nil
+  do
+    unicode = nil
+  end
+  all_loadede = true
 end
 
 return liblib
