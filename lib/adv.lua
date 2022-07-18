@@ -19,7 +19,7 @@ function adv.split (inputstr, sep)
 end
 
 function adv.trim(str)
-  return string.gsub(str, "^%s*(.-)%s*$", "%1")
+  return string.gsub(str, "^[%s\n]*(.-)[%s\n]*$", "%1")
 end
 
 function adv.duplicate(tab)

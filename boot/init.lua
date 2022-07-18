@@ -103,6 +103,8 @@ if ev and ev[4] == 41 then
     if reas ~= nil then io.print(reas) end
   end
 else
+  os.getenv = function(name) return lib.get("system").current.env[name] end
+  os.setenv = function(name, value) lib.get("system").current.env[name] = value; return lib.get("system").current.env[name] end
   do 
     local res = {lib.get("system").start("/bin/init.lua")}
     if res[1] == nil then

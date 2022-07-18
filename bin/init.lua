@@ -22,9 +22,9 @@ local event = lib.get("event")
 while true do
 	--updateMainScreen()
 	updateClock()
-  local ev = {event.pull(1, {key_down=true})}
-  if ev[3] == 18 then
-    sys.start("/bin/execute.lua")
+  local ev = {event.pull(1, {key_down=true, updateMainScreen=true})}
+  if ev[1] == "key_down" and ev[3] == 18 then
+    sys.start("/bin/execute.lua",nil,{user=lib.get("users").defUser.userName})
   end
 	
 	--[[local ev = {event.pull(10, {touch=true, drag=true})}

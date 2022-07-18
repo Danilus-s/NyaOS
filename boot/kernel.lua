@@ -7,22 +7,12 @@ local sys = lib.get("system")
 
 local lastEv = {}
 
---os.log("kernel", sys.conf["updateRate"])
-
---local oldontop = {}
---local oldname = ""
-
 gui.init()
 
 local function run(id, i, ev, type)
   sys.processes[id].status = "run"
   sys.processes[id].arg = {}
   sys.current = sys.processes[id]
-  --[[if sys.ontop == sys.current and (sys.ontop ~= oldontop or sys.current.conf.name ~= oldname) then
-    gui.updateMainScreen()
-    oldname = sys.current.conf.name
-    oldontop = sys.ontop
-  end]]
   local res = {}
   if type == "event" then
     res = {coroutine.resume(i.coro, table.unpack(ev))}
@@ -52,31 +42,43 @@ local function run(id, i, ev, type)
   end
 end
 
+local skip = true
+
+local function checkAndRun(id, i, ev)
+  if coroutine.status(i.coro) == "dead" then gui.close(id); goto skip end
+  
+  --os.log("kernel", i.path .. " " .. i.status .. " " .. (tostring((i.arg[1] or computer.uptime()-computer.uptime()) or "") .. " " .. (tostring(i.arg[2]) or ""))
+  --os.log("kernel", ev[1])
+  --os.log("kernel", i.arg[2])
+  if i.status == "run" then
+    run(id, i)
+  elseif i.status == "sleep" and computer.uptime() >= i.arg[1] then
+    run(id, i)
+  elseif i.status == "wait" and sys.processes[i.arg[1]] == nil then
+    run(id, i)
+  elseif i.status == "event" and i.arg[1] ~= -1 and computer.uptime() >= i.arg[1] then
+    run(id, i)
+  elseif i.status == "event" and i.arg[2][ev[1]] then
+    run(id, i, ev, "event")
+  elseif i.status == "loop" then
+    sys.current = sys.processes[id]
+  end
+  if ev[1] ~= nil and skip then if gui.checkPress(ev) then skip = false end end
+  ::skip::
+end
+
 while true do
   if #sys.processes == 0 then
     error("There is no process")
   end
   local ev = {computer.pullSignal(tonumber(sys.conf["updateRate"]))}
+  skip = true
+  if gui.ontop and gui.ontop.coro then checkAndRun(gui.ontop.pid, gui.ontop, ev) end
   for id,i in pairs(sys.processes) do
-    if ev[1] ~= nil then lastEv = adv.duplicate(ev) end
-    
-    if coroutine.status(i.coro) == "dead" then gui.close(id); goto skip end
-    
-    --os.log("kernel", i.path .. " " .. i.status .. " " .. (tostring((i.arg[1] or computer.uptime()-computer.uptime()) or "") .. " " .. (tostring(i.arg[2]) or ""))
-    --os.log("kernel", ev[1])
-    --os.log("kernel", i.arg[2])
-    if i.status == "run" then
-      run(id, i)
-    elseif i.status == "sleep" and computer.uptime() >= i.arg[1] then
-      run(id, i)
-    elseif i.status == "wait" and sys.processes[i.arg[1]] == nil then
-      run(id, i)
-    elseif i.status == "event" and i.arg[1] ~= -1 and computer.uptime() >= i.arg[1] then
-      run(id, i)
-    elseif i.status == "event" and i.arg[2][ev[1]] then
-      run(id, i, ev, "event")
+    if ev[1] ~= nil then lastEv = adv.duplicate(ev,z) end
+    if gui.ontop and gui.ontop ~= i then
+      checkAndRun(id, i, ev)
     end
-    ::skip::
   end
-  if ev[1] ~= nil then gui.checkPress(ev) end
+  
 end

@@ -15,7 +15,7 @@ local raw = f.read()
 local spl = adv.split(raw, "\n")
 for _,b in pairs(spl) do
   local tmp = adv.split(b, " ")
-  system.conf[tmp[1]] = tmp[2]
+  system.conf[adv.trim(tmp[1])] = adv.trim(tmp[2])
 end
 
 function system.setParam(key, value)
@@ -29,8 +29,8 @@ function system.start(path, G, args)
   args = args or {}
   G = G or adv.duplicate(_G)
   G.os.sleep = function(timeout) coroutine.yield("sleep", timeout) end
-  G.os.getenv = function(name) return system.current.env[name] end
-  G.os.setenv = function(name, value) system.current.env[name] = value; return system.current.env[name] end
+  --G.os.getenv = function(name) return system.current.env[name] end
+  --G.os.setenv = function(name, value) system.current.env[name] = value; return system.current.env[name] end
   G.os.close = function() gui.close(gui.ontop.pid) end
   G.waitForDead = function(pid) coroutine.yield("wait", pid) end
 
@@ -44,6 +44,7 @@ function system.start(path, G, args)
   local pid = #system.processes+1
   system.processes[pid] = {pid = pid,path = path, status = "run", arg={}, coro = coro, conf={},env={}, gui=false,G=G, user=(system.current.user or "system"), parent=system.current, child={}}
   system.processes[pid].env = adv.duplicate(system.current.env or {})
+  system.processes[pid].env["USER"] = system.processes[pid].user
   if system.current.tty then system.processes[pid].tty = system.current.tty end
   if system.current.child then system.current.child[#system.current.child+1] = system.processes[pid] end
   if not system.current.user or system.current.user == "system" or system.current.user == "root" then

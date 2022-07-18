@@ -103,6 +103,19 @@ end
 
 function users.gui.login()
   local dt = users.readData()
+  do 
+    local sys = lib.get("system")
+    --os.log("login", sys.conf["autologin"] .. ", " .. sys.conf["autologinusername"])
+    --os.log("login", tostring(sys.conf["autologin"] == "true") .. ", " .. tostring(dt[sys.conf["autologinusername"]]))
+    if sys.conf["autologin"] and sys.conf["autologinusername"] and dt[sys.conf["autologinusername"]] and sys.conf["autologin"] == "true" then
+      local usrn = sys.conf["autologinusername"]
+      users.defUser.userName = usrn
+      users.defUser.passwd = dt[usrn].passwd
+      users.defUser.perm = dt[usrn].perm
+      users.defUser.home = dt[usrn].home
+      return
+    end
+  end
 
   gpu.setBackground(0xDD80CC)
   gpu.fill(1,1,w,h, " ")
@@ -136,9 +149,9 @@ function users.gui.login()
   local userPasswd = sha.sha3_256(rawUserPasswd)
   if dt[usrn].passwd == userPasswd then
     users.defUser.userName = usrn
-    users.defUser.passwd = dt.passwd
-    users.defUser.perm = dt.perm
-    users.defUser.home = dt.home
+    users.defUser.passwd = dt[usrn].passwd
+    users.defUser.perm = dt[usrn].perm
+    users.defUser.home = dt[usrn].home
   else
     goto retUserPass
   end
