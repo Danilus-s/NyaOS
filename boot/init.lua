@@ -25,7 +25,6 @@ end
 gpu.fill(startW, 25, endW, 15, " ")
 gpu.fill(startW, 15+26, endW, 1, " ")
 
-local loadText = {"M","e","o","w",".",".","."}
 local il = 1
 local function dofiles(text, set)
   gpu.setForeground(colFore)
@@ -33,21 +32,32 @@ local function dofiles(text, set)
   gpu.copy(startW, 26, endW, 14, 0, -1)
   gpu.fill(startW, 15+24, endW, 1, " ")
   gpu.set(startW, 15+24, text:sub(1,endW))
-  gpu.setBackground(colFore)
-  gpu.fill(startW, 15+26, set, 1, " ")
   gpu.setBackground(colBack)
-  if il > #loadText then il = 1 gpu.set(w/2 - #loadText/2, 15+25, string.rep(" ", #loadText)) end
-  gpu.set((w/2 - #loadText/2)+il-1, 15+25, loadText[il])
-  il = il + 1
+  gpu.set((w/2 - 6), 15+25, "Loading " .. tostring(math.floor(set)) .. "%")
   computer.pullSignal(0)
 end
 
+local fs = component.proxy(computer.getBootAddress())
+deb_info = debug.getinfo
+
 function os.log(path, msg)
-  local fs = component.proxy(computer.getBootAddress())
   fs.makeDirectory("/var/")
   fs.makeDirectory("/var/sys_log/")
   local file = fs.open("/var/sys_log/"..path..".log", "a")
-  fs.write(file, os.date("[%d.%m.%Y %H:%M:%S] ")..tostring(msg).."\n")
+  fs.write(file, string.format("[%s][%s][%s] %s\n",os.date("%d.%m.%Y %H:%M:%S"),deb_info(3).short_src,deb_info(3).name,tostring(msg)))
+  fs.close(file)
+end
+function os.dumpstack(path)
+  fs.makeDirectory("/var/")
+  fs.makeDirectory("/var/sys_log/")
+  local file = fs.open("/var/sys_log/dump_"..path..".log", "a")
+  fs.write(file, os.date("%d.%m.%Y %H:%M:%S\n"))
+  for i=3,25 do
+    local info = deb_info(i)
+    if not info then break end
+    fs.write(file, (info.short_src or "~") .. " - " .. (info.name or "~") .. "\n")
+  end
+  fs.write(file, "===========END==========\n")
   fs.close(file)
 end
 

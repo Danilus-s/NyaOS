@@ -2,7 +2,7 @@ local tty = {}
 
 local sys = lib.get("system")
 local uni = lib.get("unicode")
-local gpu = lib.get("component").gpu
+local gpu = component.proxy(component.list("gpu")())
 
 tty.ttys = {}
 

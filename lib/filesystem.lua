@@ -1,12 +1,12 @@
 local filesystem = {}
 
 local uni = lib.get("unicode")
-local component = lib.get("component")
+local componen = component
 
 function filesystem.open(path, mode)
   checkArg(1, path, "string")
   mode = mode or "r"
-  local fs = component.proxy(computer.getBootAddress())
+  local fs = componen.proxy(computer.getBootAddress())
   local f = fs.open(path, mode)
   local file = {}
   file.buffer = ""
@@ -54,12 +54,12 @@ function filesystem.open(path, mode)
 end
 
 function filesystem.exists(path)
-  local fis = component.proxy(computer.getBootAddress())
+  local fis = componen.proxy(computer.getBootAddress())
   return fis.exists(path)
 end
 
 function filesystem.makeDir(path)
-  component.invoke(computer.getBootAddress(), "makeDirectory", path)
+  componen.invoke(computer.getBootAddress(), "makeDirectory", path)
 end
 
 return filesystem

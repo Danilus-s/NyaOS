@@ -4,7 +4,7 @@ local gui = lib.get("gui")
 local adv = lib.get("adv")
 local fs = lib.get("filesystem")
 local sha = lib.get("sha2")
-local gpu = lib.get("component").gpu
+local gpu = component.proxy(component.list("gpu")())
 local unicode = lib.get("unicode")
 local w,h = gpu.getResolution()
 
@@ -17,7 +17,7 @@ function users.readData()
   f.close()
   local entrys = adv.split(dt, "\n")
   local ret = {}
-  for i=1,#entrys do 
+  for i=1,#entrys do
     local spl = adv.split(entrys[i], ":")
     ret[spl[1]] = {}
     ret[spl[1]].perm = spl[2]
@@ -63,6 +63,7 @@ function users.gui.reg()
   local retryRootPasswd = string.gsub(gui.read(w/2-14, h/2+1, 28, {["maxlen"]=16, ["pwdchar"]=unicode.char(0x002022)}), "[%p]?[%s]?", "")
   if retryRootPasswd == "" then goto retRootPass end
   if rawRootPasswd ~= retryRootPasswd then goto retRootPass end
+  if #rawRootPasswd < 6 then goto retRootPass end
   local rootPasswd = sha.sha3_256(rawRootPasswd)
 
   local text = "Username"
@@ -75,7 +76,7 @@ function users.gui.reg()
   gpu.setBackground(0xDD80CC)
   rectangle(w/2-14, h/2+1, 28, 1, 0xDD80CC)
   local usrn = string.gsub(gui.read(w/2-14, h/2+1, 28, {["maxlen"]=16}), "[%p]?[%s]?", "")
-  if usrn == "" then goto retUserName end
+  if usrn == "" or usrn == "root" or usrn == "system" then goto retUserName end
 
   local text = "Password"
   ::retUserPass::
@@ -103,7 +104,7 @@ end
 
 function users.gui.login()
   local dt = users.readData()
-  do 
+  do
     local sys = lib.get("system")
     --os.log("login", sys.conf["autologin"] .. ", " .. sys.conf["autologinusername"])
     --os.log("login", tostring(sys.conf["autologin"] == "true") .. ", " .. tostring(dt[sys.conf["autologinusername"]]))
@@ -155,7 +156,22 @@ function users.gui.login()
   else
     goto retUserPass
   end
-  
+
+end
+
+local deb_info = debug.getinfo
+local sys = lib.get("system")
+function users.checkPerm(user, files)
+  local dt = users.readData()
+  if dt[sys.current.user] == 1 or sys.current.user == "system" then
+    return true
+  else
+    local info = deb_info(3)
+    if files[info.short_src] then 
+      return true
+    end
+  end
+  return false
 end
 
 return users

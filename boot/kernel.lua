@@ -5,7 +5,6 @@ local gui = lib.get("gui")
 local gpu = lib.get("component").gpu
 local sys = lib.get("system")
 
-local lastEv = {}
 
 gui.init()
 
@@ -75,7 +74,7 @@ while true do
   skip = true
   if gui.ontop and gui.ontop.coro then checkAndRun(gui.ontop.pid, gui.ontop, ev) end
   for id,i in pairs(sys.processes) do
-    if ev[1] ~= nil then lastEv = adv.duplicate(ev,z) end
+    os.log("kernel-check", tostring(gui.ontop) .. " " .. tostring(gui.ontop ~= i))
     if gui.ontop and gui.ontop ~= i then
       checkAndRun(id, i, ev)
     end

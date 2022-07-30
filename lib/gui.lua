@@ -1,6 +1,6 @@
 local gui = {}
 
-local gpu = lib.get("component").gpu
+local gpu = component.proxy(component.list("gpu")())
 local uni = lib.get("unicode")
 local event = lib.get("event")
 local sh = lib.get("shell")
@@ -37,6 +37,7 @@ end
 
 function gui.updateAppWindow()
   if sys.current.gui then
+    os.dumpstack("gui-updatewindow")
     gpuSB(0x000000)
     gpuFill(1,2,fullW,fullH-4," ")
     if gui.panel[1] ~= gui.ontop then 
@@ -64,7 +65,7 @@ function gui.updateAppWindow()
       end
       computer.pullSignal(0)
     end
-    computer.pushSignal("updateAppWindow")
+    --computer.pushSignal("updateAppWindow")
   end
 end
 
@@ -237,7 +238,7 @@ local function onEdit(ev)
 end
 
 function gui.checkPress(event)
-  if event[1] == "touch" and event[5] == 0 then
+  if event[1] == "drop" and event[5] == 0 then
     local x, y = event[3], event[4]
 
     if x >= 1 and x <= fullW-15 and y >= fullH-2 and y <= fullH then
@@ -264,7 +265,7 @@ function gui.checkPress(event)
       if not setEdit then gui.edit = nil end
     end
   end
-if gui.ontop == sys.current and gui.edit then if onEdit(event) then gui.edit.func(); gui.edit = nil end end
+  if gui.ontop == sys.current and gui.edit then if onEdit(event) then gui.edit.func(); gui.edit = nil end end
 end
 
 function gui.read(x,y,maxX,arg)

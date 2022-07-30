@@ -1,5 +1,5 @@
 local gui = lib.get("gui")
-local gpu = lib.get("component").gpu
+local gpu = lib.get("api").gpu
 local sys = lib.get("system")
 
 local fullW, fullH = gpu.getResolution()

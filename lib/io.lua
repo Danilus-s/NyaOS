@@ -2,7 +2,6 @@ local io = {}
 
 local adv = lib.get("adv")
 local unicode = lib.get("unicode")
-local component = lib.get("component")
 local sys = lib.get("system")
 --local tty = lib.get("tty")
 

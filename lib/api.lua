@@ -1,40 +1,43 @@
 local componen = {}
 
-local loaded = { 
+local users
 
-}
-
-componen["gpu"] = component.proxy(component.list("gpu")())
-componen["filesystem"] = component.proxy(computer.getBootAddress())
-
-
-
-local function loadcom(path, component)
-  --if module == "gui" then return nil, path .. ": block" end
-  if component.invoke(computer.getBootAddress(), "exists", path) then
-    local f = loadfile(path)
-    local res, reas = pcall(f, component)
-    if not res then
-      return nil, reas
-		elseif type(reas) == "table" then
-      return reas
-    else
-			return nil, path ..": component returned nil or not table."
-		end
-  end
+function init()
+  users = lib.get("users")
 end
 
-function componen.get(name)
-	if loaded[name] then return loaded[name]
-	else
-		local res, reas = loadlib("/lib/components/" .. name .. ".lua", name)
-	    if not res then
-	      return nil, reas
-	    else
-	      loaded[name] = res
-	      return loaded[name]
-	    end
-	end
+local com_gpu = component.proxy(component.list("gpu")())
+
+--componen["gpu"] = component.proxy(component.list("gpu")())
+--componen["filesystem"] = component.proxy(computer.getBootAddress())
+
+---------------------GPU---------------------
+
+componen.gpu = {}
+
+function componen.gpu.set(x,y,text)
+  if not users.checkPerm(1, {["/lib/gui"]=true}) then return nil, "permission denied." end
+
+  return com_gpu.set(x,y,text)
 end
 
-return componen
+function componen.gpu.getResolution()
+  return com_gpu.getResolution()
+end
+
+function componen.gpu.setForeground(color)
+  if not users.checkPerm(1, {["/lib/gui"]=true}) then return nil, "permission denied." end
+
+  return com_gpu.setForeground(color)
+end
+
+function componen.gpu.setBackground(color)
+  if not users.checkPerm(1, {["/lib/gui"]=true}) then return nil, "permission denied." end
+
+  return com_gpu.setBackground(color)
+end
+
+
+---------------------------------------------
+
+return componen, init

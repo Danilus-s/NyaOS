@@ -33,6 +33,8 @@ function system.start(path, G, args)
   --G.os.setenv = function(name, value) system.current.env[name] = value; return system.current.env[name] end
   G.os.close = function() gui.close(gui.ontop.pid) end
   G.waitForDead = function(pid) coroutine.yield("wait", pid) end
+  G.debug = nil
+  G.component = nil
 
   if not fs.exists(path) then return nil, path .. " not exists." end
   local f = fs.open(path)
